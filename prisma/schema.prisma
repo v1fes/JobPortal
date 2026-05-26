@@ -1,0 +1,144 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  SEEKER
+  EMPLOYER
+  ADMIN
+}
+
+enum JobType {
+  FULL_TIME
+  PART_TIME
+  CONTRACT
+  REMOTE
+  INTERNSHIP
+}
+
+enum ApplicationStatus {
+  PENDING
+  REVIEWED
+  ACCEPTED
+  REJECTED
+}
+
+model User {
+  id            String        @id @default(cuid())
+  email         String        @unique
+  passwordHash  String
+  name          String
+  role          UserRole      @default(SEEKER)
+  image         String?
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  profile       Profile?
+  jobs          Job[]         @relation("EmployerJobs")
+  applications  Application[] @relation("SeekerApplications")
+  savedJobs     SavedJob[]
+
+  @@index([email])
+  @@index([role])
+}
+
+model Profile {
+  id                 String   @id @default(cuid())
+  userId             String   @unique
+  bio                String?  @db.Text
+  phone              String?
+  location           String?
+  resumeUrl          String?
+  portfolioUrl       String?
+  skills             String[] @default([])
+  experience         String?  @db.Text
+  education          String?  @db.Text
+  companyName        String?
+  companyDescription String?  @db.Text
+  companyWebsite     String?
+  companyLogo        String?
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Category {
+  id   String @id @default(cuid())
+  name String @unique
+  slug String @unique
+  jobs Job[]
+
+  @@index([slug])
+}
+
+model Job {
+  id           String      @id @default(cuid())
+  title        String
+  description  String      @db.Text
+  company      String
+  location     String
+  salary       String?
+  salaryMin    Int?
+  salaryMax    Int?
+  type         JobType     @default(FULL_TIME)
+  requirements String[]    @default([])
+  benefits     String[]    @default([])
+  isActive     Boolean     @default(true)
+  views        Int         @default(0)
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+
+  categoryId   String?
+  category     Category?   @relation(fields: [categoryId], references: [id])
+  employerId   String
+  employer     User        @relation("EmployerJobs", fields: [employerId], references: [id], onDelete: Cascade)
+  applications Application[]
+  savedBy      SavedJob[]
+
+  @@index([title])
+  @@index([location])
+  @@index([type])
+  @@index([isActive])
+  @@index([employerId])
+  @@index([categoryId])
+  @@index([createdAt])
+}
+
+model Application {
+  id          String            @id @default(cuid())
+  coverLetter String?           @db.Text
+  resumeUrl   String?
+  status      ApplicationStatus @default(PENDING)
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+
+  jobId    String
+  job      Job  @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  seekerId String
+  seeker   User @relation("SeekerApplications", fields: [seekerId], references: [id], onDelete: Cascade)
+
+  @@unique([jobId, seekerId])
+  @@index([jobId])
+  @@index([seekerId])
+  @@index([status])
+}
+
+model SavedJob {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+
+  userId String
+  user   User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  jobId  String
+  job    Job  @relation(fields: [jobId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, jobId])
+  @@index([userId])
+  @@index([jobId])
+}
