@@ -8,6 +8,7 @@
     "start": "next start",
     "lint": "next lint",
     "test": "jest",
+    "postinstall": "prisma generate",
     "test:coverage": "jest --coverage",
     "test:ci": "jest --ci --coverage",
     "prisma:generate": "prisma generate",
@@ -20,6 +21,8 @@
   },
   "dependencies": {
     "@prisma/client": "^5.22.0",
+    "@supabase/ssr": "^0.10.3",
+    "@supabase/supabase-js": "^2.106.2",
     "bcryptjs": "^2.4.3",
     "next": "14.2.18",
     "next-auth": "^4.24.10",
